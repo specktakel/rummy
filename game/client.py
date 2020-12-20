@@ -3,13 +3,38 @@ from network import Network
 import sys
 import pickle
 pygame.init()
-pygame.font.init()
+
 try:
     name = sys.argv[1]
 except IndexError:
     name = None
 print(name)
 bg = pygame.image.load('background.png')
+
+
+class Text():
+    def __init__(self, text, pos, **kwargs):
+        self.text = text
+        self.fontsize = kwargs.get('fontsize', 50)
+        self.fontname = kwargs.get('fontname', 'Computer Modern Serif')
+        self.colour = kwargs.get('colour', (255, 255, 255))
+
+
+    def set_font(self):
+        """Set the font from its name and size."""
+        self.font = pygame.font.SysFont(self.fontname, self.fontsize)
+
+
+    def render(self):
+        """Render the text into an image."""
+        self.img = self.font.render(self.text, 1, self.fontcolor)
+        #self.rect = self.img.get_rect()
+        #self.rect.topleft = self.pos
+
+
+    def draw(self):
+        """Draw the text image to the screen."""
+        self.screen.blit(self.img, self.pos)
 
 class Button():
     def __init__(self, text, x, y, colour):
@@ -117,9 +142,22 @@ def menu_screen():
 
 
 def main():
-    print("Game started!")
-    pygame.quit()
-    sys.exit()
+    while True:
+        state = n.send("get_state")
+    #print("Game started!")
+    #pygame.quit()
+    #sys.exit()
 
 while True:
     menu_screen()
+
+
+
+
+
+
+
+
+
+
+
