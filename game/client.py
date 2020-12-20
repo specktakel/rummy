@@ -4,7 +4,11 @@ import sys
 import pickle
 pygame.init()
 pygame.font.init()
-
+try:
+    name = sys.argv[1]
+except IndexError:
+    name = None
+print(name)
 bg = pygame.image.load('background.png')
 
 class Button():
@@ -57,6 +61,7 @@ def menu_screen():
     n = Network()
     ID = int(n.getP())
     print(f"You are player {ID}")
+    n.send({'name': name, 'ready': False})
     run = True
     clock = pygame.time.Clock()
     ready = False
@@ -67,7 +72,9 @@ def menu_screen():
         win.blit(bg, (0, 0))
         ready_btn.draw(win)
         try:
-            others_ready = n.send("get_ready")
+            player_dict = n.send("get_players")
+            player_dict.pop(ID)
+            others_ready = all(list(player_dict[key]['ready'] for key in player_dict.keys()))
         except:
             pass
         font = pygame.font.SysFont("Computer Modern Serif", 60)
@@ -80,10 +87,12 @@ def menu_screen():
         else:
             ready_text = font.render("You pressed ready!", 1, (255, 255, 255))
             if not ready_sent:
-                n.send("ready")
-                ready_sent = True
+                ready_sent = n.send("ready")
             else:
                 pass
+        if others_ready and ready:
+            game_start = True
+            run = False
 
 
         win.blit(waiting_text, (width/2 - waiting_text.get_width()/2, height/2 - waiting_text.get_height()/2))
@@ -104,7 +113,13 @@ def menu_screen():
                     pass
             else:
                 pass
-    #main()
+    main()
+
+
+def main():
+    print("Game started!")
+    pygame.quit()
+    sys.exit()
 
 while True:
     menu_screen()
