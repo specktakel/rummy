@@ -3,13 +3,13 @@ import random
 
 
 class Table():
-    def __init__(self, *player_names):
+    def __init__(self):
         self.colours = np.array(['red', 'blue', 'yellow', 'black'])
         self.numbers = np.arange(1, 14, dtype=int)
         self.stones = []
         self.players = []
         # self.blocks = []     # can't access this attribute from child class, useless as of now
-        self.grid = [[None for j in range(5)] for i in range(5)]   #i:j, i:row, j:column, is 6 rows by 28 columns
+        self.grid = [[None for j in range(28)] for i in range(5)]   #i:j, i:row, j:column, is 6 rows by 28 columns
         for c in self.colours:
             for num in self.numbers:
                 self.stones.append(Stone(colour=c, number=num))
@@ -17,18 +17,31 @@ class Table():
                 # print(c, num)
         #self.stones.append(stone(j=True))
         #self.stones.append(stone(j=True))
-        for c, name in enumerate(player_names):
-            self.players.append(Player(name=name, num=c))
+        #for c, name in enumerate(player_names):
+        #    self.players.append(Player(name=name, num=c))
         #print(self.players)
         # distribute stones randomly into players' inventories:
-        self.rand_order = np.array(random.sample(range(len(self.stones)), len(self.players) * 14))
+        
         # print(rand_order)
+        
+        
+
+
+    def add_player(self, name, num):
+        print("Added player", name, num)
+        player = Player(name=name, num=num)
+        self.players.append(player)
+        return player
+        
+
+    def start_game(self):
+        print("Game started!")
+        self.rand_order = np.array(random.sample(range(len(self.stones)), len(self.players) * 14))
         for c, p in enumerate(self.players):
             for i in range(c * 14, (c + 1) * 14):
                 self.stones[self.rand_order[i]].owner = p.name
                 p.inventory.append(self.stones[self.rand_order[i]])
         self.stones = [s for c, s in enumerate(self.stones) if not c in self.rand_order]
-
 
     def draw_stone(self, num):
         try:

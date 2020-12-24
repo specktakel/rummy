@@ -3,7 +3,7 @@ import socket
 import sys
 # from player import Player
 import pickle
-from game import Game
+from rummy import *
 server = "192.168.178.21"
 port = 5555
 
@@ -16,23 +16,30 @@ except socket.error as e:
     print(e)
 
 
-s.listen(2)
+s.listen(3)
 print("Waiting")
 
 
-connected = set()
+#connected = set()
 playerID = 0
-game_start = False
+game_started = False
 players_ready = 0
 num_players = 0
 player_dict = {}
+game = Table()
 def threaded_client(conn, ID):
-    global game_start
+    global game
+    global game_started
     global players_ready
     global num_players
     global player_dict
     print(ID)
-    conn.send(str.encode(str(ID)))
+    if False:   #game_started:
+        print("The game already started, disconnecting client", ID)
+        conn.send(str.encode(str(-1)))
+        conn.close()
+    else:
+        conn.send(str.encode(str(ID)))
     try:
         data = pickle.loads(conn.recv(4096))
         if not data:
@@ -41,23 +48,42 @@ def threaded_client(conn, ID):
             player_dict[ID] = data
         print(player_dict)
         conn.send(pickle.dumps(player_dict))
-            
+        player = game.add_player(player_dict[ID]['name'], ID)
+        for pl in game.players:
+            if pl.number == ID:
+                player = pl
+                print(f"player with id {ID} in game instance")
+                break
+        else:
+            print(f"no player with id {ID} found")
     except:
         pass
-    reply = ""
+    
 
     while True:
         '''concerning the lobby.'''
+        reply = ""
         try:
-            data = pickle.loads(conn.recv(4096*8))
+            data = pickle.loads(conn.recv(4096))
             if not data:
                 break
             else:
-                if data == "ready" and not player_dict[ID]['ready']:
+                if data == "quit":
+                    conn.sendall(pickle.dumps(False))
+                    conn.close()
+                    player_dict.pop(ID)
+                    break
+                    print(f"Disconnected {ID} from server.")
+                elif data == "ready" and not player_dict[ID]['ready']:
                     player_dict[ID]['ready'] = True
                     reply = True
                     print(f"client {ID} is ready")
                     print(player_dict)
+                    if all(list(player_dict[key]['ready'] for key in player_dict.keys())):
+                        print("All players are now ready")
+                        game.start_game()
+                        game_started = True
+                        #break
                 elif data == "get_players":
                     # print("asked if all players are ready")
                     reply = player_dict
@@ -67,27 +93,39 @@ def threaded_client(conn, ID):
         except:
             break
         if all(list(player_dict[key]['ready'] for key in player_dict.keys())):
-            game_start = True
+            print("Game starting")
             break
+        else:
+            pass
+        
+
+    first = True
+    while True:
+        # print("Game started by server!")
+        '''Game loop goes here'''
+        if first:
+            print(f"in Game loop {ID}")
+            first = False
+        reply = ""
+        try:
+            data = pickle.loads(conn.recv(4096*8))
+            if not data:
+                break
+            else:
+                if data == "quit":
+                    conn.sendall(pickle.dumps(False))
+                    break
+
+                elif data == "get_self":
+                    reply = player
+        except:
+            pass
+        conn.sendall(pickle.dumps(reply))
 
 
 
-
-    #while True:
-    #'''Game loop goes here'''
-    #    try:
-    #        data = pickle.loads(conn.recv(4096*8))
-    #        if not data:
-    #            break
-    #        elif data == "get_state":
-                
-
-
-
-
-
-    #    except:
-    #        break
+        
+        
 
 
 
@@ -100,12 +138,13 @@ def threaded_client(conn, ID):
 
 
 while True:
+    if not game_started:
     # accept new connection
-    conn, addr = s.accept()
-    print("Connected to", addr)
+        conn, addr = s.accept()
+        print("Connected to", addr)
     # start thread for new client with connection and unique playerID
-    start_new_thread(threaded_client, (conn, playerID))
-    playerID += 1
+        start_new_thread(threaded_client, (conn, playerID))
+        playerID += 1
     # increase playerID for next client
     # if enough players have joined, start game
     #if players_ready == playerID:

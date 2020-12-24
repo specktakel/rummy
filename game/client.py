@@ -11,7 +11,8 @@ except IndexError:
 print(name)
 bg = pygame.image.load('images/background.png')
 
-
+width = 1100
+height = 600
 
 
 class Text():
@@ -21,6 +22,8 @@ class Text():
         self.fontname = kwargs.get('fontname', 'Computer Modern Serif')
         self.colour = kwargs.get('colour', (255, 255, 255))
         self.bold = kwargs.get('bold', False)
+        self.set_font()
+        self.render()
 
 
     def set_font(self):
@@ -39,14 +42,21 @@ class Text():
         """Draw the text image to the screen."""
         self.screen.blit(self.img, self.pos)
 
+
 class Button():
-    def __init__(self, text, x, y, colour):
+    def __init__(self, text, x, y, colour, width=None, height=None):
         self.text = text
         self.x = x
         self.y = y
         self.colour = colour
-        self.width = 100
-        self.height = 40
+        if width is None:
+            self.width = 100
+        else:
+            self.width = width
+        if height is None:
+            self.height = 40
+        else:
+            self.height = height
 
 
     def draw(self, win):
@@ -124,7 +134,7 @@ def menu_screen():
         win.blit(waiting_text, (width/2 - waiting_text.get_width()/2, height/2 - waiting_text.get_height()/2))
         
         win.blit(ready_text, (width/2 - ready_text.get_width()/2, height/2 - ready_text.get_height()/2-100))
-        pygame.display.update()
+        
         for event in pygame.event.get():
             #print(event)
             if event.type == pygame.QUIT:
