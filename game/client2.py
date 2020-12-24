@@ -151,14 +151,3 @@ def main():
 
 while True:
     menu_screen()
-
-
-
-
-
-
-
-
-
-
-

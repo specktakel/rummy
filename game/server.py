@@ -31,6 +31,7 @@ def threaded_client(conn, ID):
     global players_ready
     global num_players
     global player_dict
+    print(ID)
     conn.send(str.encode(str(ID)))
     try:
         data = pickle.loads(conn.recv(4096))
@@ -71,21 +72,22 @@ def threaded_client(conn, ID):
 
 
 
-    while True:
+
+    #while True:
     #'''Game loop goes here'''
-        try:
-            data = pickle.loads(conn.recv(4096*8))
-            if not data:
-                break
-            elif data == "get_state":
+    #    try:
+    #        data = pickle.loads(conn.recv(4096*8))
+    #        if not data:
+    #            break
+    #        elif data == "get_state":
                 
 
 
 
 
 
-        except:
-            break
+    #    except:
+    #        break
 
 
 
