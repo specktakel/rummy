@@ -25,14 +25,21 @@ playerID = 0
 game_started = False
 players_ready = 0
 num_players = 0
+player_order = []
 player_dict = {}
 game = Table()
+active_player = 0
+order = {}
 def threaded_client(conn, ID):
+    global active_player
+    global order
     global game
     global game_started
     global players_ready
     global num_players
     global player_dict
+    global player_order
+    
     print(ID)
     if False:   #game_started:
         print("The game already started, disconnecting client", ID)
@@ -66,7 +73,7 @@ def threaded_client(conn, ID):
         try:
             data = pickle.loads(conn.recv(4096))
             if not data:
-                break
+                continue
             else:
                 if data == "quit":
                     conn.sendall(pickle.dumps(False))
@@ -83,6 +90,8 @@ def threaded_client(conn, ID):
                         print("All players are now ready")
                         game.start_game()
                         game_started = True
+                        num_players = len(player_dict)
+                        player_order = random.sample(range(num_players), num_players)
                         #break
                 elif data == "get_players":
                     # print("asked if all players are ready")
@@ -101,11 +110,13 @@ def threaded_client(conn, ID):
 
     first = True
     while True:
+        #print("number of players", num_players)
         # print("Game started by server!")
         '''Game loop goes here'''
         if first:
             print(f"in Game loop {ID}")
             first = False
+            print("player order", player_order)
         reply = ""
         try:
             data = pickle.loads(conn.recv(4096*8))
@@ -118,6 +129,23 @@ def threaded_client(conn, ID):
 
                 elif data == "get_self":
                     reply = player
+                elif data == "get_table":
+                    reply = game.grid
+                elif data == "draw":
+                    valid = game.draw_stone(ID)
+                    if valid:
+                        reply = player
+                    else:
+                        reply = False
+                elif data == "next":
+                    valid = game.move_done()
+                    if valid:
+                        active_player += 1
+                        game.next_player(player_order)
+                        
+                    else:
+                        
+                        pass # should check if moves are valid
         except:
             pass
         conn.sendall(pickle.dumps(reply))

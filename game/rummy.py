@@ -4,7 +4,8 @@ import random
 
 class Table():
     def __init__(self):
-        self.colours = np.array(['red', 'blue', 'yellow', 'black'])
+        #self.colours = np.array(['red', 'blue', 'yellow', 'black'])
+        self.colours = np.array(['black'])
         self.numbers = np.arange(1, 14, dtype=int)
         self.stones = []
         self.players = []
@@ -36,12 +37,13 @@ class Table():
 
     def start_game(self):
         print("Game started!")
-        self.rand_order = np.array(random.sample(range(len(self.stones)), len(self.players) * 14))
+        self.rand_order = np.array(random.sample(range(len(self.stones)), len(self.players) * 3))
         for c, p in enumerate(self.players):
-            for i in range(c * 14, (c + 1) * 14):
+            for i in range(c * 3, (c + 1) * 3):
                 self.stones[self.rand_order[i]].owner = p.name
                 p.inventory.append(self.stones[self.rand_order[i]])
         self.stones = [s for c, s in enumerate(self.stones) if not c in self.rand_order]
+        
 
     def draw_stone(self, num):
         try:
@@ -49,8 +51,11 @@ class Table():
             self.stones[i].owner = self.players[num].name
             self.players[num].inventory.append(self.stones[i])
             self.stones.pop(i)
+            print(f"player {num} got stone {i}")
+            return True
         except ValueError:
             print("No more stones left to draw from.")
+            return False
 
 
     def display_grid(self):
@@ -163,6 +168,7 @@ class Stone(Table):
 class Player(Table):
     def __init__(self, name=None, num=None):
         self.inventory = []
+        self.public_inventory = {'name': name, 'number': num, 'stones': []}
         self.name = name
         self.number = num
         print(self.name)

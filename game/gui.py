@@ -16,10 +16,10 @@ class Text():
         self.render()
         if pos == "cen_u":
             self.pos = (self.size[0]/2 - self.img.get_width()/2, \
-                   self.size[1]/2 - self.img.get_height()/2-100)
+                        self.size[1]/2 - self.img.get_height()/2-100)
         elif pos == "cen_l":
             self.pos = (self.size[0]/2 - self.img.get_width()/2, \
-                   self.size[1]/2 - self.img.get_height()/2+100)
+                        self.size[1]/2 - self.img.get_height()/2+100)
         else:
             self.pos = pos
 
@@ -169,10 +169,16 @@ class Inventory():
         
 
     @staticmethod
-    def check_click(win, pos):
+    def check_click(win, pos, active):
+        '''Move stones around the table. If a player is active (active=True), player is able
+        to move stones from inventory to table. Else player is only allowed to move
+        stones around the player's inventory.
+        '''
         tab = Inventory.places['table']
         inv = Inventory.places['inventory']
-        if tab.active == [None, None]:
+        '''
+        if not active or tab.active == [None, None]:      # If not player's turn or player's turn and no active stone on table.
+        #if tab.active == [None, None]:
             for i in range(inv.y_slots):
                 for j in range(inv.x_slots):
                     if inv.button_grid[i, j].click(pos) and inv.active == [None, None] and inv.grid[i, j] != 0:
@@ -184,7 +190,48 @@ class Inventory():
                         inv.active = [None, None]
                     else:
                         pass
+        elif active and tab.active != [None, None]:
+            for i in range(tab.y_slots):
+                for j in range(tab.x_slots):
+                    if tab.button_grid[i, j].click(pos) and inv.active != [None, None]:
+                        inv.move(inv.active, [i, j], tab)
+                        inv.active = [None, None]
+                    elif tab.button_grid[i, j].click(pos) and tab.active == [None, None] and tab.grid[i, j] != 0:
+                        tab.active = [i, j]
+                    elif tab.button_grid[i, j].click(pos) and tab.active != [None, None] and tab.grid[i, j] == 0:
+                        tab.move(tab.active, [i, j])
+                        tab.active = [None, None]
+                    elif tab.button_grid[i, j].click(pos) and tab.active == [i, j]:
+                        tab.active = [None, None]
+                    else:
+                        pass
+        '''
+        if active:
+            check_inventory()
+            check_table()
+        else:
+            check_inventory()
 
+
+
+
+    @staticmethod
+    def check_inventory(inv):
+        '''Move stones around the inventory. Do not even consider the table here.'''
+        for i in range(inv.y_slots):
+            for j in range(inv.x_slots):
+                if inv.button_grid[i, j].click(pos) and inv.active == [None, None] and inv.grid[i, j] != 0:
+                    inv.active = [i, j]
+                elif inv.button_grid[i, j].click(pos) and inv.active != [None, None] and inv.grid[i, j] == 0:
+                    inv.move(inv.active, [i, j])
+                    inv.active = [None, None]
+                elif inv.button_grid[i, j].click(pos) and inv.active == [i, j]:
+                    inv.active = [None, None]
+                else:
+                    pass
+
+    @staticmethod
+    def check_table(inv, tab):
         for i in range(tab.y_slots):
             for j in range(tab.x_slots):
                 if tab.button_grid[i, j].click(pos) and inv.active != [None, None]:
@@ -199,6 +246,39 @@ class Inventory():
                     tab.active = [None, None]
                 else:
                     pass
+
+
+    def init_sort(self, stonebuttons, player):
+        print("sorting initial inventory...")
+        shape = self.grid.shape
+        inv = self.grid.flatten()
+        print(inv.shape)
+        print(player.inventory)
+        #for cou, s in enumerate(player.inventory):
+        #    print(cou, s.c, s.num)
+        #    print(stonebuttons.buttons[s.c][s.num])
+        for counter, s in enumerate(player.inventory):
+            inv[counter] = stonebuttons.buttons[s.c][s.num]
+            #print(s.num, s.c)
+        self.grid = np.reshape(inv, shape)
+        print(self.grid)
+
+
+    def sort_draw(self, stonebuttons, player):
+        print(self.grid)
+        new_stone = player.inventory[-1]
+        print(new_stone.c, new_stone.num)
+        shape = self.grid.shape
+        inv = self.grid.flatten()
+        print(inv)
+        for cou, v in enumerate(inv):
+            if not v:
+                print(cou)
+                inv[cou] = stonebuttons.buttons[new_stone.c][new_stone.num]
+                break
+        self.grid = np.reshape(inv, shape)
+        print(self.grid)
+        
 
 
 class StoneButtons():
@@ -217,5 +297,12 @@ class StoneButtons():
         self.buttons = {c: {} for c in self.colours}
         self.image_path = os.path.relpath(os.path.join('images', 'stones'))
         self.files = os.listdir(self.image_path)
-        self.buttons['black'][1] = pygame.image.load(os.path.join(self.image_path, self.files[0]))
+        for f in self.files:
+            name = f.rstrip('.png')
+            strs = name.split('_')
+            num = int(strs[-1])
+            col = strs[0]
+            self.buttons[col][num] = pygame.image.load(os.path.join(self.image_path, f))
+            
+        #self.buttons['black'][1] = pygame.image.load(os.path.join(self.image_path, self.files[0]))
 

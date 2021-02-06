@@ -21,9 +21,15 @@ except IndexError:
 print(name)
 clock = pygame.time.Clock()
 
-
+def show_players(win, player_dict):  
+    player_str = Text('Players:', (950, 20))
+    for c, t in enumerate(player_dict.items(), 1):
+        text = Text(t[1]['name'], (950, 20 + c * 40))
+        text.blit(win)
+    player_str.blit(win)
 
 def menu():
+    '''TODO: make everything a bit prettier, get handling on clients leaving the lobby'''
     run = True
     n = Network()
     ID = int(n.getP())
@@ -35,6 +41,7 @@ def menu():
     else:
         print(f"You are player {ID}")
     player_dict = n.send({'name': name, 'ready': False})
+    #print(player_dict)
     bg_menu = pygame.image.load('images/background.png')
     ready_btn = Button("Ready", 800, 400)
     menu_buttons = [ready_btn]
@@ -46,8 +53,8 @@ def menu():
     ready_sent = False
     others_ready = False
 
-    def show_players(player_dict):
-        pass
+    #def show_players(player_dict):
+    #    pass
 
 
     while run:
@@ -58,10 +65,11 @@ def menu():
         # get current state of players
         try:
             player_dict = n.send("get_players")
+            # print(player_dict)
             p_d = player_dict.copy()
             p_d.pop(ID)
             others_ready = all(list(p_d[key]['ready'] for key in p_d.keys()))
-            #show_players(win, player_dict)
+            show_players(win, player_dict)
             
         except:
             pass
@@ -117,35 +125,40 @@ def game(n, ID, player_dict):
     table = Inventory(name='table', x=25, y=25, width=800, x_slots=28, y_slots=5, gap_y=20)
     inventory = Inventory(name='inventory', x=25, y=440, width=875, height=135, x_slots=10, y_slots=2, gap_x=3, gap_y=3, colour=(100, 100, 100))
     #print(Inventory.places)
-    inventory.grid[0, 0] = stonebuttons.buttons['black'][1]
-    table.grid[0, 0] = stonebuttons.buttons['black'][1]
+    #inventory.grid[0, 0] = stonebuttons.buttons['black'][1]
+    #table.grid[0, 0] = stonebuttons.buttons['black'][1]
     #print(inventory.grid)
     bg_game = pygame.image.load(os.path.join('images', 'background_wood.png'))
     offset_x = 25
     offset_y = 25
-    black_1 =pygame.image.load(os.path.join('images', 'stones', 'black_1.png'))
+    black_1 = pygame.image.load(os.path.join('images', 'stones', 'black_1.png'))
     drawbutton = Button("Draw", 950, 450, (255, 0, 0))
     nextbutton = Button("Next", 950, 510, (255, 0, 0))
-    gamebuttons = [drawbutton, nextbutton]
+    gamebuttons = {'draw': drawbutton, 'next': nextbutton}
     try:
         player = n.send("get_self")
+        print("got first player instance")
+        inventory.init_sort(stonebuttons, player)
     except:
         pass
     print(player.number, player.name)
-    repl = n.send("quit")
-    pygame.quit()
-    sys.exit()
+    #for i in player.inventory:
+    #    print(type(i))
+
+    #repl = n.send("quit")
+    #pygame.quit()
+    #sys.exit()
     while True:
-        clock.tick(30)
+        clock.tick(15)
         win.blit(bg_game, (0, 0))
-        for btn in gamebuttons:
-            btn.blit(win)
-        #drawbutton.blit(win)
-        #stonebuttons.blit(win, table, table_grid)
+        for k, v in gamebuttons.items():
+            v.blit(win)
         inventory.blit(win)
         #win.blit(inventory.grid[0, 0], inventory.coords[0, 0])
         #ready_btn.draw(win)
         #text.draw(win)
+        #board = n.send("get_table")
+        changed = n.send("get_state")
         
         for event in pygame.event.get():
             #print(event)
@@ -156,10 +169,25 @@ def game(n, ID, player_dict):
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 Inventory.check_click(win, pos)
+                if drawbutton.click(pos):
+                    print("draw")
+                    new_player = n.send("draw")
+                    print(new_player)
+                    if new_player:
+                        print("sorting new stone")
+                        inventory.sort_draw(stonebuttons, new_player)
+                        player = new_player
+                        #del new_player
+                    else:
+                        print("No more stones to draw from.")
+                    print("next player's turn...")
+                
                 #table.check_click(win, pos)
         inventory.blit_stones(win)
         table.blit_stones(win)
         pygame.display.update()
+
+
 
 while True:
     n, ID, player_dict = menu()
